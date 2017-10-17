@@ -220,6 +220,20 @@ func (sel *SequentialSelector) Next() (DataVector, error) {
 	return vector, nil
 }
 
+// RandSelector randomly selects a data vector from the corresponding data set,
+// the selection is infinite, thus Next() never returns error.
+type RandSelector struct {
+	dataSet *DataSet
+}
+
+func (sel *RandSelector) Init(dataSet *DataSet) {
+	sel.dataSet = dataSet
+}
+
+func (sel *RandSelector) Next() (DataVector, error) {
+	return sel.dataSet.Vectors[rand.Intn(sel.dataSet.Len())], nil
+}
+
 // ZeroValueWeightsInitializer adjusts weight arrays length based on data set width.
 type ZeroValueWeightsInitializer struct{}
 
@@ -249,14 +263,14 @@ func (initializer *RandWeightsInitializer) Init(set *DataSet, neurons [][]*Neuro
 	}
 }
 
-// RadiusReducingInfluenceFunc influences only neurons in a given radius around BMU.
+// RadiusReducingEvenInfluenceFunc influences only neurons in a given radius around BMU.
 // Radius is reduced at each iteration, so the influence area becomes smaller,
 // but not smaller than r/2, so R >= influence area > R/2.
-type RadiusReducingInfluenceFunc struct {
+type RadiusReducingEvenInfluenceFunc struct {
 	Radius float64
 }
 
-func (influence *RadiusReducingInfluenceFunc) Apply(bmu *Neuron, currentIt, iterationsNumber, i, j int) float64 {
+func (influence *RadiusReducingEvenInfluenceFunc) Apply(bmu *Neuron, currentIt, iterationsNumber, i, j int) float64 {
 	t := float64(currentIt)
 	T := float64(iterationsNumber)
 	qt := influence.Radius / (1 + t/T)
