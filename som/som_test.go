@@ -43,12 +43,15 @@ func TestColorsClustering(t *testing.T) {
 
 	somap := som.New(xLen, yLen)
 	somap.Initializer = &som.RandWeightsInitializer{}
-	somap.Influence = &som.RadiusReducingEvenInfluenceFunc{Radius: 4}
+	somap.Influence = &som.RadiusReducingConstantInfluenceFunc{Radius: 4}
 	somap.Restraint = &som.ExpRestraintFunc{InitialRate: 1}
 	somap.Selector = &som.RandSelector{}
 	somap.Learn(dataSet, 2000)
+	saveSOMAsColorsPNG(t, somap, "30x30_radius_reducing_const_func.png")
 
-	saveSOMAsColorsPNG(t, somap, "30x30.png")
+	somap.Influence = &som.GaussianInfluenceFunc{InitialWidth: 4}
+	somap.Learn(dataSet, 2000)
+	saveSOMAsColorsPNG(t, somap, "30x30_gaussian_func.png")
 }
 
 func TestIrisesClustering(t *testing.T) {
@@ -61,7 +64,7 @@ func TestIrisesClustering(t *testing.T) {
 
 	somap := som.New(10, 10)
 	somap.Initializer = &som.RandWeightsInitializer{}
-	somap.Influence = &som.RadiusReducingEvenInfluenceFunc{Radius: 3}
+	somap.Influence = &som.RadiusReducingConstantInfluenceFunc{Radius: 3}
 	somap.Learn(ds, ds.Len())
 
 	compareDispersion(t, irises, somap, "sl-sw", func(iris iris) (float64, float64) {

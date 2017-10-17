@@ -263,14 +263,14 @@ func (initializer *RandWeightsInitializer) Init(set *DataSet, neurons [][]*Neuro
 	}
 }
 
-// RadiusReducingEvenInfluenceFunc influences only neurons in a given radius around BMU.
+// RadiusReducingConstantInfluenceFunc influences only neurons in a given radius around BMU.
 // Radius is reduced at each iteration, so the influence area becomes smaller,
 // but not smaller than r/2, so R >= influence area > R/2.
-type RadiusReducingEvenInfluenceFunc struct {
+type RadiusReducingConstantInfluenceFunc struct {
 	Radius float64
 }
 
-func (influence *RadiusReducingEvenInfluenceFunc) Apply(bmu *Neuron, currentIt, iterationsNumber, i, j int) float64 {
+func (influence *RadiusReducingConstantInfluenceFunc) Apply(bmu *Neuron, currentIt, iterationsNumber, i, j int) float64 {
 	t := float64(currentIt)
 	T := float64(iterationsNumber)
 	qt := influence.Radius / (1 + t/T)
@@ -282,6 +282,22 @@ func (influence *RadiusReducingEvenInfluenceFunc) Apply(bmu *Neuron, currentIt, 
 	} else {
 		return 1
 	}
+}
+
+// GaussianInfluenceFunc calculates influence coefficient g(t) in the following way:
+// g(t) = exp( -d**2/ (2*q(t)**2) )
+// where q(T) is neighbourhood width function q(t) = InitialWidth * exp(-t/T),
+// where d is euclidean distance from the BMU to [i][j] neuron
+type GaussianInfluenceFunc struct {
+	InitialWidth float64
+}
+
+func (gif *GaussianInfluenceFunc) Apply(bmu *Neuron, currentIt, iterationsNumber, i, j int) float64 {
+	t := float64(currentIt)
+	T := float64(iterationsNumber)
+	q := gif.InitialWidth * math.Exp(-t/T)
+	d := math.Sqrt(math.Pow(float64(bmu.X-i), 2) + math.Pow(float64(bmu.Y-j), 2))
+	return math.Exp(-(d * d) / (2 * q * q))
 }
 
 // SimpleRestraintFunc calculates coefficient as => A / (B + t).
