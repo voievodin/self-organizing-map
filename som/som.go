@@ -221,17 +221,27 @@ func (sel *SequentialSelector) Next() (DataVector, error) {
 }
 
 // RandSelector randomly selects a data vector from the corresponding data set,
-// the selection is infinite, thus Next() never returns error.
+// the selection is infinite, thus Next() never returns error. If data set size is X
+// then X calls to Next() will return X different random vectors from the data set.
 type RandSelector struct {
 	dataSet *DataSet
+	perm    []int
+	idx     int
 }
 
 func (sel *RandSelector) Init(dataSet *DataSet) {
 	sel.dataSet = dataSet
+	sel.perm = rand.Perm(dataSet.Len())
 }
 
 func (sel *RandSelector) Next() (DataVector, error) {
-	return sel.dataSet.Vectors[rand.Intn(sel.dataSet.Len())], nil
+	if sel.idx == len(sel.perm) {
+		sel.idx = 0
+		sel.perm = rand.Perm(sel.dataSet.Len())
+	}
+	vector := sel.dataSet.Vectors[sel.perm[sel.idx]]
+	sel.idx++
+	return vector, nil
 }
 
 // ZeroValueWeightsInitializer adjusts weight arrays length based on data set width.

@@ -87,6 +87,28 @@ func TestIrisesClustering(t *testing.T) {
 	})
 }
 
+func TestRandSelectorDoesNotSelectTheSameVectorTwice(t *testing.T) {
+	dataSet := &som.DataSet{}
+	for i := 0; i < 100; i++ {
+		dataSet.AddRaw(float64(i))
+	}
+
+	selector := &som.RandSelector{}
+	selector.Init(dataSet)
+
+	selected := make([]int, dataSet.Len())
+	for i := 0; i < dataSet.Len(); i++ {
+		vector, _ := selector.Next()
+		selected[int(vector[0])]++
+	}
+
+	for i := 0; i < len(selected); i++ {
+		if selected[i] != 1 {
+			t.Fatal("All the elements from the data set must be selected")
+		}
+	}
+}
+
 func genRandDataSet(count, vectorLen int) *som.DataSet {
 	ds := &som.DataSet{}
 	for i := 0; i < count; i++ {
