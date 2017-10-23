@@ -56,6 +56,13 @@ type NeuronsInitializer interface {
 	Init(set *DataSet, neurons [][]*Neuron)
 }
 
+// ProgressMonitor handler for monitoring learning progress.
+type ProgressMonitor interface {
+	// ItCompleted called each time iteration completes.
+	// Iteration is within bounds [1, itNum].
+	ItCompleted(it, itNum int, som *SOM)
+}
+
 // Neuron is a build unit in SOM.
 // One neuron manages number of weights equal to the number of input vector elements(data set width).
 // Each neuron is indexed and has its unique place in a map.
@@ -85,6 +92,7 @@ func New(X, Y int) *SOM {
 		Restraint:   &NoRestraintFunc{},
 		Influence:   &BMUOnlyInfluencedFunc{},
 		Distance:    &EuclideanDistanceFunc{},
+		Monitor:     &NoOpProgressMonitor{},
 	}
 }
 
@@ -99,6 +107,7 @@ type SOM struct {
 	Restraint   RestraintFunc
 	Influence   InfluenceFunc
 	Distance    DistanceFunc
+	Monitor     ProgressMonitor
 }
 
 func (som *SOM) Learn(set *DataSet, iterationsNumber int) {
@@ -113,6 +122,8 @@ func (som *SOM) Learn(set *DataSet, iterationsNumber int) {
 		som.computeDistance(vector)
 		bmu := som.findBMU()
 		som.fixWeights(it, iterationsNumber, bmu, vector)
+
+		som.Monitor.ItCompleted(it+1, iterationsNumber, som)
 	}
 }
 
@@ -357,3 +368,8 @@ func (erf *ExpRestraintFunc) Apply(currentIt, iterationsNumber int) float64 {
 	T := float64(iterationsNumber)
 	return erf.InitialRate * math.Exp(-t/T)
 }
+
+// NoOpProgressMonitor is a default implementation of ProgressMonitor, does nothing.
+type NoOpProgressMonitor struct{}
+
+func (pm *NoOpProgressMonitor) ItCompleted(it, itNum int, som *SOM) {}
