@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/voievodin/self-organizing-map/som"
+	"path/filepath"
 	"reflect"
 )
 
@@ -256,6 +257,10 @@ func saveDataSetAsColorsPNG(t *testing.T, ds *som.DataSet, xLen, yLen int) {
 }
 
 func savePNG(t *testing.T, img *image.RGBA, filename string) {
+	err := os.MkdirAll(filepath.Dir(filename), os.ModePerm)
+	if err != nil && err != os.ErrExist {
+		t.Fatal(err)
+	}
 	f, err := os.Create(filename)
 	if err != nil {
 		t.Fatal(err)

@@ -2,5 +2,5 @@ Experimental implementation of [Self-Organizing Map](https://en.wikipedia.org/wi
 
 ### Colors clustering example
 
-![Data set](som/testreport/colors/data-set.png)
-![SOM](som/testreport/colors/30x30_gaussian_func.png)
+![Data set](res/colors/data-set.png)
+![SOM](res/colors/30x30_gaussian_func.png)
