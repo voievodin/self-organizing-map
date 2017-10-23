@@ -273,6 +273,34 @@ func (initializer *RandWeightsInitializer) Init(set *DataSet, neurons [][]*Neuro
 	}
 }
 
+// RandDataSetVectorsWeightsInitializer sets weights values to random vectors from data set.
+type RandDataSetVectorsWeightsInitializer struct{}
+
+func (initializer *RandDataSetVectorsWeightsInitializer) Init(dataSet *DataSet, neurons [][]*Neuron) {
+	zeroInitializer := &ZeroValueWeightsInitializer{}
+	zeroInitializer.Init(dataSet, neurons)
+
+	matrixSize := len(neurons) * len(neurons[0])
+	if matrixSize < dataSet.Len() {
+		dataSet = dataSet.Copy()
+		dataSet.Sort()
+		dataSet.Reduce(matrixSize)
+	}
+
+	selector := &RandSelector{}
+	selector.Init(dataSet)
+
+	for i := 0; i < len(neurons); i++ {
+		for j := 0; j < len(neurons[i]); j++ {
+			neuron := neurons[i][j]
+			vector, _ := selector.Next()
+			for k := 0; k < len(neuron.Weights); k++ {
+				neuron.Weights[k] = vector[k]
+			}
+		}
+	}
+}
+
 // RadiusReducingConstantInfluenceFunc influences only neurons in a given radius around BMU.
 // Radius is reduced at each iteration, so the influence area becomes smaller,
 // but not smaller than r/2, so R >= influence area > R/2.

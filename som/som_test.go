@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/voievodin/self-organizing-map/som"
+	"reflect"
 )
 
 const (
@@ -105,6 +106,31 @@ func TestRandSelectorDoesNotSelectTheSameVectorTwice(t *testing.T) {
 	for i := 0; i < len(selected); i++ {
 		if selected[i] != 1 {
 			t.Fatal("All the elements from the data set must be selected")
+		}
+	}
+}
+
+func TestRandDataSetVectorsWeightsInitializer(t *testing.T) {
+	dataSet := &som.DataSet{}
+	for i := 0; i < 100; i++ {
+		dataSet.AddRaw(rand.Float64(), rand.Float64(), rand.Float64())
+	}
+
+	somap := som.New(5, 5)
+
+	initializer := &som.RandDataSetVectorsWeightsInitializer{}
+	initializer.Init(dataSet, somap.Neurons)
+
+	for i := 0; i < len(somap.Neurons); i++ {
+		for j := 0; j < len(somap.Neurons[i]); j++ {
+			neuron := somap.Neurons[i][j]
+			found := false
+			for k := 0; k < dataSet.Len() && !found; k++ {
+				found = reflect.DeepEqual(dataSet.Vectors[k], som.DataVector(neuron.Weights))
+			}
+			if !found {
+				t.Fatal("Weights values must be initialized from data set vectors")
+			}
 		}
 	}
 }
