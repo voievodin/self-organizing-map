@@ -110,6 +110,7 @@ type SOM struct {
 	Monitor     ProgressMonitor
 }
 
+// Learn starts/completes learning of this SOM from the given data.
 func (som *SOM) Learn(set *DataSet, iterationsNumber int) {
 	som.Initializer.Init(set, som.Neurons)
 	som.Selector.Init(set)
@@ -127,9 +128,28 @@ func (som *SOM) Learn(set *DataSet, iterationsNumber int) {
 	}
 }
 
+// Test finds BMU (Neuron) and returns it.
+// Note that this func DOES CHANGE the values of neuron.Distance props,
+// so they become equal to the distance between the given vector
+// and corresponding neurons.
 func (som *SOM) Test(vector DataVector) *Neuron {
 	som.computeDistance(vector)
 	return som.findBMU()
+}
+
+// ComputeDistanceMatrix computes distance from the given vector
+// to each neuron and returns a matrix of such values.
+// The value at position (x, y) is a distance to the neuron at position (x, y).
+// Note that this method DOES NOT CHANGE the values of neuron.Distance props.
+func (som *SOM) ComputeDistanceMatrix(vector DataVector) [][]float64 {
+	distances := make([][]float64, len(som.Neurons))
+	for i := 0; i < len(som.Neurons); i++ {
+		distances[i] = make([]float64, len(som.Neurons[i]))
+		for j := 0; j < len(som.Neurons[i]); j++ {
+			distances[i][j] = som.Distance.Apply(vector, som.Neurons[i][j].Weights)
+		}
+	}
+	return distances
 }
 
 func (som *SOM) computeDistance(vector DataVector) {

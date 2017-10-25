@@ -136,6 +136,34 @@ func TestRandDataSetVectorsWeightsInitializer(t *testing.T) {
 	}
 }
 
+func TestSOMComputesDistanceMatrix(t *testing.T) {
+	dataSet := &som.DataSet{Vectors: []som.DataVector{{0.1, 0.2, 0.3}, {0.9, 0.8, 0.7}}}
+
+	somap := som.New(5, 5)
+	somap.Initializer = &som.RandWeightsInitializer{}
+	somap.Learn(dataSet, dataSet.Len())
+
+	vector := som.DataVector{0.4, 0.5, 0.6}
+
+	// test vector before, so values of neuron.Distance are set
+	_ = somap.Test(vector)
+	distances := somap.ComputeDistanceMatrix(vector)
+
+	for i := 0; i < len(distances); i++ {
+		for j := 0; j < len(distances[i]); j++ {
+			if distances[i][j] != somap.Neurons[i][j].Distance {
+				t.Fatalf(
+					"The distances at position (%d, %d) %f != %f (neuron distance)",
+					i,
+					j,
+					distances[i][j],
+					somap.Neurons[i][j].Distance,
+				)
+			}
+		}
+	}
+}
+
 func genRandDataSet(count, vectorLen int) *som.DataSet {
 	ds := &som.DataSet{}
 	for i := 0; i < count; i++ {
