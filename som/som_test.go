@@ -1,6 +1,8 @@
 package som_test
 
 import (
+	"bytes"
+	"encoding/gob"
 	"encoding/json"
 	"image"
 	"image/color"
@@ -8,12 +10,12 @@ import (
 	"io"
 	"math/rand"
 	"os"
+	"path/filepath"
+	"reflect"
 	"testing"
 	"time"
 
 	"github.com/voievodin/self-organizing-map/som"
-	"path/filepath"
-	"reflect"
 )
 
 const (
@@ -159,6 +161,37 @@ func TestSOMComputesDistanceMatrix(t *testing.T) {
 					distances[i][j],
 					somap.Neurons[i][j].Distance,
 				)
+			}
+		}
+	}
+}
+
+func TestSOMGobSerialization(t *testing.T) {
+	dataSet := &som.DataSet{Vectors: []som.DataVector{{0.1, 0.2, 0.3}}}
+
+	somap := som.New(5, 5)
+	somap.Initializer = &som.RandWeightsInitializer{}
+	somap.Learn(dataSet, dataSet.Len())
+
+	buf := &bytes.Buffer{}
+	encoder := gob.NewEncoder(buf)
+	decoder := gob.NewDecoder(buf)
+
+	if err := encoder.Encode(&som.SOM{Neurons: somap.Neurons}); err != nil {
+		t.Fatal(err)
+	}
+
+	decodedSOM := &som.SOM{}
+	if err := decoder.Decode(decodedSOM); err != nil {
+		t.Fatal(err)
+	}
+
+	for i := 0; i < len(somap.Neurons); i++ {
+		for j := 0; j < len(somap.Neurons[i]); j++ {
+			actual := somap.Neurons[i][j]
+			decoded := decodedSOM.Neurons[i][j]
+			if !reflect.DeepEqual(actual, decoded) {
+				t.Fatalf("Expected neurons to be equal but %v != %v", actual, decoded)
 			}
 		}
 	}
