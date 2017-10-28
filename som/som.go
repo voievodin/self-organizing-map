@@ -152,6 +152,33 @@ func (som *SOM) ComputeDistanceMatrix(vector DataVector) [][]float64 {
 	return distances
 }
 
+// SeparateWeights creates and returns N matrices of neurons weights.
+// Each matrix in the result describes neurons weights at corresponding
+// index position, for example:
+//
+// for the following matrix of neurons weights:
+//    [ [1, 2] [3, 4] ]
+//    [ [5, 6] [7, 8] ]
+//
+// result will be:
+//  result[0]:   result[1]:
+//     [ 1 3 ]         [ 2 4 ]
+//     [ 5 7 ]         [ 6 8 ]
+//
+func (som *SOM) SeparateWeights() [][][]float64 {
+	separations := make([][][]float64, len(som.Neurons[0][0].Weights))
+	for si := 0; si < len(separations); si++ {
+		separations[si] = make([][]float64, len(som.Neurons))
+		for i := 0; i < len(separations[si]); i++ {
+			separations[si][i] = make([]float64, len(som.Neurons[i]))
+			for j := 0; j < len(separations[si][i]); j++ {
+				separations[si][i][j] = som.Neurons[i][j].Weights[si]
+			}
+		}
+	}
+	return separations
+}
+
 func (som *SOM) computeDistance(vector DataVector) {
 	for i := 0; i < len(som.Neurons); i++ {
 		for j := 0; j < len(som.Neurons[i]); j++ {

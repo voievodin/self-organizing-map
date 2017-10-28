@@ -166,6 +166,30 @@ func TestSOMComputesDistanceMatrix(t *testing.T) {
 	}
 }
 
+func TestSOMSeparatesWeights(t *testing.T) {
+	dataSet := &som.DataSet{Vectors: []som.DataVector{{0.1, 0.2, 0.3}}}
+
+	somap := som.New(5, 5)
+	somap.Initializer = &som.RandWeightsInitializer{}
+	somap.Learn(dataSet, dataSet.Len())
+
+	separations := somap.SeparateWeights()
+
+	for i := 0; i < len(somap.Neurons); i++ {
+		for j := 0; j < len(somap.Neurons[i]); j++ {
+			for k := 0; k < len(somap.Neurons[i][j].Weights); k++ {
+				if separations[k][i][j] != somap.Neurons[i][j].Weights[k] {
+					t.Fatalf(
+						"Wrong snapshot values separations[%d][%d][%d] != neuron[%d][%d].weights[%d]",
+						k, i, j, i, j, k,
+					)
+
+				}
+			}
+		}
+	}
+}
+
 func TestSOMGobSerialization(t *testing.T) {
 	dataSet := &som.DataSet{Vectors: []som.DataVector{{0.1, 0.2, 0.3}}}
 
