@@ -199,3 +199,43 @@ func TestInDataAdapterIsAppliedWhileComputingDistanceMatrix(t *testing.T) {
 		t.Fatalf("Expected distance to be 4, but it is %f", distance)
 	}
 }
+
+func TestScalingDataAdapterAdaptsValues(t *testing.T) {
+	cases := []struct {
+		min, max, vector, expected []float64
+	}{
+		{
+			min:      []float64{0},
+			max:      []float64{10},
+			vector:   []float64{5},
+			expected: []float64{0.5},
+		},
+		{
+			min:      []float64{10},
+			max:      []float64{20},
+			vector:   []float64{12},
+			expected: []float64{0.2},
+		},
+		{
+			min:      []float64{-50},
+			max:      []float64{50},
+			vector:   []float64{0},
+			expected: []float64{0.5},
+		},
+		{
+			min:      []float64{0, 0, 0},
+			max:      []float64{10, 20, 40},
+			vector:   []float64{10, 10, 10},
+			expected: []float64{1, 0.5, 0.25},
+		},
+	}
+
+	for _, aCase := range cases {
+		adapter := som.NewScalingDataAdapter(aCase.min, aCase.max)
+
+		adapted := adapter.Adapt(aCase.vector)
+		if !reflect.DeepEqual(adapted, aCase.expected) {
+			t.Fatalf("Expected %v != actual %v", adapter, aCase.expected)
+		}
+	}
+}
