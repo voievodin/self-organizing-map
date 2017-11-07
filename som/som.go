@@ -63,6 +63,17 @@ type ProgressMonitor interface {
 	ItCompleted(it, itNum int, som *SOM)
 }
 
+// DataAdapter adapts a data vector in implementation specific manner.
+type DataAdapter interface {
+	Adapt(vector []float64) []float64
+}
+
+// DataAdapterFunc is an adapter that allows to use
+// regular functions as DataAdapters.
+type DataAdapterFunc func(vector []float64) []float64
+
+func (f DataAdapterFunc) Adapt(vector []float64) []float64 { return f(vector) }
+
 // Neuron is a build unit in SOM.
 // One neuron manages number of weights equal to the number of input vector elements(data set width).
 // Each neuron is indexed and has its unique place in a map.
@@ -86,13 +97,14 @@ func New(X, Y int) *SOM {
 	}
 
 	return &SOM{
-		Neurons:     neurons,
-		Initializer: &ZeroValueWeightsInitializer{},
-		Selector:    &SequentialSelector{},
-		Restraint:   &NoRestraintFunc{},
-		Influence:   &BMUOnlyInfluencedFunc{},
-		Distance:    &EuclideanDistanceFunc{},
-		Monitor:     &NoOpProgressMonitor{},
+		Neurons:       neurons,
+		Initializer:   &ZeroValueWeightsInitializer{},
+		Selector:      &SequentialSelector{},
+		Restraint:     &NoRestraintFunc{},
+		Influence:     &BMUOnlyInfluencedFunc{},
+		Distance:      &EuclideanDistanceFunc{},
+		Monitor:       &NoOpProgressMonitor{},
+		InDataAdapter: &NoOpAdapter{},
 	}
 }
 
@@ -102,12 +114,13 @@ func New(X, Y int) *SOM {
 type SOM struct {
 	Neurons [][]*Neuron
 
-	Initializer NeuronsInitializer
-	Selector    Selector
-	Restraint   RestraintFunc
-	Influence   InfluenceFunc
-	Distance    DistanceFunc
-	Monitor     ProgressMonitor
+	Initializer   NeuronsInitializer
+	Selector      Selector
+	Restraint     RestraintFunc
+	Influence     InfluenceFunc
+	Distance      DistanceFunc
+	Monitor       ProgressMonitor
+	InDataAdapter DataAdapter
 }
 
 // Learn starts/completes learning of this SOM from the given data.
@@ -119,6 +132,7 @@ func (som *SOM) Learn(set *DataSet, iterationsNumber int) {
 		if err != nil {
 			break
 		}
+		vector = som.InDataAdapter.Adapt(vector)
 
 		som.computeDistance(vector)
 		bmu := som.findBMU()
@@ -133,15 +147,18 @@ func (som *SOM) Learn(set *DataSet, iterationsNumber int) {
 // so they become equal to the distance between the given vector
 // and corresponding neurons.
 func (som *SOM) Test(vector DataVector) *Neuron {
-	som.computeDistance(vector)
+	som.computeDistance(som.InDataAdapter.Adapt(vector))
 	return som.findBMU()
 }
 
 // ComputeDistanceMatrix computes distance from the given vector
 // to each neuron and returns a matrix of such values.
 // The value at position (x, y) is a distance to the neuron at position (x, y).
-// Note that this method DOES NOT CHANGE the values of neuron.Distance props.
+// Note that this func:
+//   - DOES NOT CHANGE the values of neuron.Distance props;
+//   - ADAPTS input vector using som.InDataAdapter.
 func (som *SOM) ComputeDistanceMatrix(vector DataVector) [][]float64 {
+	vector = som.InDataAdapter.Adapt(vector)
 	distances := make([][]float64, len(som.Neurons))
 	for i := 0; i < len(som.Neurons); i++ {
 		distances[i] = make([]float64, len(som.Neurons[i]))
@@ -420,3 +437,11 @@ func (erf *ExpRestraintFunc) Apply(currentIt, iterationsNumber int) float64 {
 type NoOpProgressMonitor struct{}
 
 func (pm *NoOpProgressMonitor) ItCompleted(it, itNum int, som *SOM) {}
+
+// NoOpAdapter is an implementation of DataAdapter which returns
+// input vector without any modifications.
+type NoOpAdapter struct{}
+
+func (adapter *NoOpAdapter) Adapt(vector []float64) []float64 {
+	return vector
+}

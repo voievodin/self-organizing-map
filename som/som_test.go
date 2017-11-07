@@ -151,3 +151,51 @@ func TestSOMGobSerialization(t *testing.T) {
 		}
 	}
 }
+
+func TestInDataAdapterIsAppliedWhileLearning(t *testing.T) {
+	dataSet := &som.DataSet{Vectors: []som.DataVector{{1}}}
+
+	somap := som.New(1, 1)
+	somap.Initializer = &som.RandDataSetVectorsWeightsInitializer{}
+	somap.InDataAdapter = som.DataAdapterFunc(func(vector []float64) []float64 {
+		return []float64{5}
+	})
+	somap.Learn(dataSet, dataSet.Len())
+
+	if somap.Neurons[0][0].Weights[0] != 5 {
+		t.Fatalf("Expected weights[0] to be 5, but it is %f", somap.Neurons[0][0].Weights[0])
+	}
+}
+
+func TestInDataAdapterIsAppliedWhileTesting(t *testing.T) {
+	dataSet := &som.DataSet{Vectors: []som.DataVector{{1, 2, 3}}}
+
+	somap := som.New(1, 1)
+	somap.Learn(dataSet, dataSet.Len())
+
+	neuron := somap.Test(som.DataVector{100, 100, 100})
+	if neuron.Distance == 0 {
+		t.Fatalf("Expected distance to be different from 0")
+	}
+
+	somap.InDataAdapter = som.DataAdapterFunc(func(vector []float64) []float64 {
+		return dataSet.Vectors[0]
+	})
+
+	neuron = somap.Test(som.DataVector{100, 100, 100})
+	if neuron.Distance != 0 {
+		t.Fatalf("Adapation was not applied, expected distance to be 0, but it is %f", neuron.Distance)
+	}
+}
+
+func TestInDataAdapterIsAppliedWhileComputingDistanceMatrix(t *testing.T) {
+	dataSet := &som.DataSet{Vectors: []som.DataVector{{1}}}
+
+	somap := som.New(1, 1)
+	somap.Learn(dataSet, dataSet.Len())
+
+	distance := somap.ComputeDistanceMatrix(som.DataVector{5})[0][0]
+	if distance != 4 {
+		t.Fatalf("Expected distance to be 4, but it is %f", distance)
+	}
+}
