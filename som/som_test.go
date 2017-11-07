@@ -74,7 +74,7 @@ func TestSOMComputesDistanceMatrix(t *testing.T) {
 
 	somap := som.New(5, 5)
 	somap.Initializer = &som.RandWeightsInitializer{}
-	somap.Learn(dataSet, dataSet.Len())
+	somap.LearnEntire(dataSet)
 
 	vector := som.DataVector{0.4, 0.5, 0.6}
 
@@ -102,7 +102,7 @@ func TestSOMSeparatesWeights(t *testing.T) {
 
 	somap := som.New(5, 5)
 	somap.Initializer = &som.RandWeightsInitializer{}
-	somap.Learn(dataSet, dataSet.Len())
+	somap.LearnEntire(dataSet)
 
 	separations := somap.SeparateWeights()
 
@@ -126,7 +126,7 @@ func TestSOMGobSerialization(t *testing.T) {
 
 	somap := som.New(5, 5)
 	somap.Initializer = &som.RandWeightsInitializer{}
-	somap.Learn(dataSet, dataSet.Len())
+	somap.LearnEntire(dataSet)
 
 	buf := &bytes.Buffer{}
 	encoder := gob.NewEncoder(buf)
@@ -160,7 +160,7 @@ func TestInDataAdapterIsAppliedWhileLearning(t *testing.T) {
 	somap.InDataAdapter = som.DataAdapterFunc(func(vector []float64) []float64 {
 		return []float64{5}
 	})
-	somap.Learn(dataSet, dataSet.Len())
+	somap.LearnEntire(dataSet)
 
 	if somap.Neurons[0][0].Weights[0] != 5 {
 		t.Fatalf("Expected weights[0] to be 5, but it is %f", somap.Neurons[0][0].Weights[0])
@@ -171,7 +171,7 @@ func TestInDataAdapterIsAppliedWhileTesting(t *testing.T) {
 	dataSet := &som.DataSet{Vectors: []som.DataVector{{1, 2, 3}}}
 
 	somap := som.New(1, 1)
-	somap.Learn(dataSet, dataSet.Len())
+	somap.LearnEntire(dataSet)
 
 	neuron := somap.Test(som.DataVector{100, 100, 100})
 	if neuron.Distance == 0 {
@@ -192,7 +192,7 @@ func TestInDataAdapterIsAppliedWhileComputingDistanceMatrix(t *testing.T) {
 	dataSet := &som.DataSet{Vectors: []som.DataVector{{1}}}
 
 	somap := som.New(1, 1)
-	somap.Learn(dataSet, dataSet.Len())
+	somap.LearnEntire(dataSet)
 
 	distance := somap.ComputeDistanceMatrix(som.DataVector{5})[0][0]
 	if distance != 4 {

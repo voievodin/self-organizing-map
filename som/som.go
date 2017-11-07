@@ -123,7 +123,8 @@ type SOM struct {
 	InDataAdapter DataAdapter
 }
 
-// Learn starts/completes learning of this SOM from the given data.
+// Learn does learning of this SOM from the given data set,
+// making as many iterations as iterationsNumber value is.
 func (som *SOM) Learn(set *DataSet, iterationsNumber int) {
 	som.Initializer.Init(set, som.Neurons)
 	som.Selector.Init(set)
@@ -140,6 +141,12 @@ func (som *SOM) Learn(set *DataSet, iterationsNumber int) {
 
 		som.Monitor.ItCompleted(it+1, iterationsNumber, som)
 	}
+}
+
+// LearnEntire does learning of this SOM from the given
+// data set, making as many iterations as data set length is.
+func (som *SOM) LearnEntire(dataSet *DataSet) {
+	som.Learn(dataSet, dataSet.Len())
 }
 
 // Test finds BMU (Neuron) and returns it.
