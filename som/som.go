@@ -429,15 +429,21 @@ func (rc *SimpleRestraintFunc) Apply(currentIt, iterationsNumber int) float64 {
 	return rc.A / (rc.B + float64(currentIt))
 }
 
-// ExpRestraintFunc calculates coefficient as => InitialRate * exp(-t/T)
+// ExpRestraintFunc calculates coefficient as => InitialRate * exp(-t/N),
+// if N is <= 0 (not set) then iterationsNumber will be used.
 type ExpRestraintFunc struct {
-	InitialRate float64
+	InitialRate, N float64
 }
 
 func (erf *ExpRestraintFunc) Apply(currentIt, iterationsNumber int) float64 {
 	t := float64(currentIt)
-	T := float64(iterationsNumber)
-	return erf.InitialRate * math.Exp(-t/T)
+	var denominator float64
+	if erf.N <= 0 {
+		denominator = float64(iterationsNumber)
+	} else {
+		denominator = erf.N
+	}
+	return erf.InitialRate * math.Exp(-t/denominator)
 }
 
 // NoOpProgressMonitor is a default implementation of ProgressMonitor, does nothing.
