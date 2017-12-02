@@ -3,6 +3,7 @@ package som_test
 import (
 	"bytes"
 	"encoding/gob"
+	"math"
 	"math/rand"
 	"os"
 	"reflect"
@@ -237,5 +238,40 @@ func TestScalingDataAdapterAdaptsValues(t *testing.T) {
 		if !reflect.DeepEqual(adapted, aCase.expected) {
 			t.Fatalf("Expected %v != actual %v", adapter, aCase.expected)
 		}
+	}
+}
+
+func TestNeuronsAreOnTheRightPositions(t *testing.T) {
+	N, M := 15, 7
+	sm := som.New(N, M)
+	for x := 0; x < N; x++ {
+		for y := 0; y < M; y++ {
+			neuron := sm.Neurons[x][y]
+			if neuron.X != x || neuron.Y != y {
+				t.Fatalf("Expected neuron to be on (%d, %d) position, but it is on (%d, %d)", x, y, neuron.X, neuron.Y)
+			}
+		}
+	}
+}
+
+func BenchmarkDistanceCalculationUsingMathPow(b *testing.B) {
+	// simulating the case with neuron in the influence functions
+	neuron := &som.Neuron{X: 10, Y: 10}
+	x, y := 5, 5
+
+	for i := 0; i < b.N; i++ {
+		_ = math.Sqrt(math.Pow(float64(neuron.X-x), 2) + math.Pow(float64(neuron.Y-y), 2))
+	}
+}
+
+func BenchmarkDistanceCalculationUsingMultiplication(b *testing.B) {
+	// simulating the case with neuron in the influence functions
+	neuron := &som.Neuron{X: 10, Y: 10}
+	x, y := 5, 5
+
+	for i := 0; i < b.N; i++ {
+		xx := float64(neuron.X - x)
+		yy := float64(neuron.Y - y)
+		_ = math.Sqrt(xx*xx + yy*yy)
 	}
 }

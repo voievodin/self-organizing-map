@@ -30,7 +30,7 @@ type RestraintFunc interface {
 // the weights of each neuron will be changed according to the BMU position.
 type InfluenceFunc interface {
 	// currentIt => [0, iterationsNumber)
-	Apply(bmu *Neuron, currentIt, iterationsNumber, i, j int) float64
+	Apply(bmu *Neuron, currentIt, iterationsNumber, x, y int) float64
 }
 
 // DistanceFunc calculates Distance between two points
@@ -88,9 +88,6 @@ func New(X, Y int) *SOM {
 	neurons := make([][]*Neuron, X)
 	for i := 0; i < X; i++ {
 		neurons[i] = make([]*Neuron, Y)
-	}
-
-	for i := 0; i < X; i++ {
 		for j := 0; j < Y; j++ {
 			neurons[i][j] = &Neuron{X: i, Y: j}
 		}
@@ -390,12 +387,12 @@ type RadiusReducingConstantInfluenceFunc struct {
 	Radius float64
 }
 
-func (influence *RadiusReducingConstantInfluenceFunc) Apply(bmu *Neuron, currentIt, iterationsNumber, i, j int) float64 {
+func (influence *RadiusReducingConstantInfluenceFunc) Apply(bmu *Neuron, currentIt, iterationsNumber, x, y int) float64 {
 	t := float64(currentIt)
 	T := float64(iterationsNumber)
 	qt := influence.Radius / (1 + t/T)
 
-	d := math.Sqrt(math.Pow(float64(bmu.X-i), 2) + math.Pow(float64(bmu.Y-j), 2))
+	d := math.Sqrt(math.Pow(float64(bmu.X-x), 2) + math.Pow(float64(bmu.Y-y), 2))
 
 	if d > qt {
 		return 0
@@ -404,19 +401,41 @@ func (influence *RadiusReducingConstantInfluenceFunc) Apply(bmu *Neuron, current
 	}
 }
 
-// GaussianInfluenceFunc calculates influence coefficient g(t) in the following way:
-// g(t) = exp( -d**2/ (2*q(t)**2) )
-// where q(T) is neighbourhood width function q(t) = InitialWidth * exp(-t/T),
-// where d is euclidean distance from the BMU to [i][j] neuron
-type GaussianInfluenceFunc struct {
+// Calculates influence coefficient g(t) using gaussian function
+// with exp decay function to reduce neighbourhood width.
+// The calculation is done in the following way:
+// g(t) = exp( - d*d/(2*q(t)*q(t)) )
+// q(t) = InitialWidth * exp( -currentIt/iterationsNumber )
+// d - distance from the BMU to the neuron at position (x, y)
+type GaussianExpDecayInfluenceFunc struct {
+	// InitialWidth is the initial width of the neighbourhood.
 	InitialWidth float64
 }
 
-func (gif *GaussianInfluenceFunc) Apply(bmu *Neuron, currentIt, iterationsNumber, i, j int) float64 {
-	t := float64(currentIt)
-	T := float64(iterationsNumber)
-	q := gif.InitialWidth * math.Exp(-t/T)
-	d := math.Sqrt(math.Pow(float64(bmu.X-i), 2) + math.Pow(float64(bmu.Y-j), 2))
+func (f *GaussianExpDecayInfluenceFunc) Apply(bmu *Neuron, currentIt, iterationsNumber, x, y int) float64 {
+	xx := float64(bmu.X - x)
+	yy := float64(bmu.Y - y)
+	d := math.Sqrt(xx*xx + yy*yy)
+	q := f.InitialWidth * math.Exp(-float64(currentIt)/float64(iterationsNumber))
+	return math.Exp(-(d * d) / (2 * q * q))
+}
+
+// GaussianInfluenceFunc calculates influence coefficient g(t) using gaussian function
+// with custom neighbourhood function.
+// g(t) = exp( -d**2/ (2*q(t)**2) )
+// where q(T) - is neighbourhood function
+// where d is euclidean distance from the BMU to [i][j] neuron
+type GaussianInfluenceFunc struct {
+	// Q - neighbourhood function.
+	// currentIt => [currentIt, iterationsNumber)
+	Q func(currentIt, iterationsNumber int) float64
+}
+
+func (f *GaussianInfluenceFunc) Apply(bmu *Neuron, currentIt, iterationsNumber, x, y int) float64 {
+	xx := float64(bmu.X - x)
+	yy := float64(bmu.Y - y)
+	d := math.Sqrt(xx*xx + yy*yy)
+	q := f.Q(currentIt, iterationsNumber)
 	return math.Exp(-(d * d) / (2 * q * q))
 }
 

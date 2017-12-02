@@ -49,7 +49,7 @@ func TestColorsClusteringUsingGaussianInfluenceWidth4AndExpRestraintRate1(t *tes
 
 	somap := som.New(xLen, yLen)
 	somap.Initializer = &som.RandWeightsInitializer{}
-	somap.Influence = &som.GaussianInfluenceFunc{InitialWidth: 4}
+	somap.Influence = &som.GaussianExpDecayInfluenceFunc{InitialWidth: 4}
 	somap.Restraint = &som.ExpRestraintFunc{InitialRate: 1}
 	somap.Selector = &som.RandSelector{}
 	somap.Learn(dataSet, 2000)
