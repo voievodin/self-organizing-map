@@ -263,6 +263,17 @@ func (ed *EuclideanDistanceFunc) Apply(xVector, yVector []float64) float64 {
 	return math.Sqrt(sum)
 }
 
+// See https://en.wikipedia.org/wiki/Taxicab_geometry.
+type ManhattanDistanceFunc struct{}
+
+func (md *ManhattanDistanceFunc) Apply(xVector, yVector []float64) float64 {
+	var sum float64
+	for i := 0; i < len(xVector); i++ {
+		sum += math.Abs(xVector[i]-yVector[i])
+	}
+	return sum
+}
+
 // BMUOnlyInfluencedFunc is implementation of InfluenceFunc which
 // allows modification of BMU neuron only.
 type BMUOnlyInfluencedFunc struct{}
