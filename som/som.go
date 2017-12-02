@@ -269,9 +269,23 @@ type ManhattanDistanceFunc struct{}
 func (md *ManhattanDistanceFunc) Apply(xVector, yVector []float64) float64 {
 	var sum float64
 	for i := 0; i < len(xVector); i++ {
-		sum += math.Abs(xVector[i]-yVector[i])
+		sum += math.Abs(xVector[i] - yVector[i])
 	}
 	return sum
+}
+
+// See https://en.wikipedia.org/wiki/Chebyshev_distance.
+type ChebyshevDistanceFunc struct{}
+
+func (cd *ChebyshevDistanceFunc) Apply(xVector, yVector []float64) float64 {
+	max := 0.0
+	for i := 0; i < len(xVector); i++ {
+		diff := math.Abs(xVector[i] - yVector[i])
+		if diff > max {
+			max = diff
+		}
+	}
+	return max
 }
 
 // BMUOnlyInfluencedFunc is implementation of InfluenceFunc which

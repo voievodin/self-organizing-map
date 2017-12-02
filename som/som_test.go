@@ -254,6 +254,15 @@ func TestNeuronsAreOnTheRightPositions(t *testing.T) {
 	}
 }
 
+func TestChebyshevDistanceFunc(t *testing.T) {
+	f := som.ChebyshevDistanceFunc{}
+
+	distance := f.Apply([]float64{1, 4}, []float64{2, 4.5})
+	if 1 != distance {
+		t.Fatalf("Wrong distance '%f', expected '%f'", distance, 1.0)
+	}
+}
+
 func BenchmarkDistanceCalculationUsingMathPow(b *testing.B) {
 	// simulating the case with neuron in the influence functions
 	neuron := &som.Neuron{X: 10, Y: 10}
