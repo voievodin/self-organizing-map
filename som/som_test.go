@@ -263,6 +263,81 @@ func TestChebyshevDistanceFunc(t *testing.T) {
 	}
 }
 
+func TestProvidedWeightsInitializerProperlyInitializesWeightsFor1DMap(t *testing.T) {
+	sm := som.New(3, 1)
+	sm.Initializer = &som.ProvidedWeightsInitializer{
+		Weights: [][][]float64{
+			{
+				{1, 2, 3},
+			},
+			{
+				{4, 5, 6},
+			},
+			{
+				{7, 8, 9},
+			},
+		},
+	}
+	sm.Learn(&som.DataSet{Vectors: []som.DataVector{{}}}, 0)
+
+	checkSlicesEqual(t, sm.Neurons[0][0].Weights, []float64{1, 2, 3})
+	checkSlicesEqual(t, sm.Neurons[1][0].Weights, []float64{4, 5, 6})
+	checkSlicesEqual(t, sm.Neurons[2][0].Weights, []float64{7, 8, 9})
+}
+
+func TestProvidedWeightsInitializerProperlyInitializesWeightsFor2DMap(t *testing.T) {
+	sm := som.New(2, 3)
+	sm.Initializer = &som.ProvidedWeightsInitializer{
+		Weights: [][][]float64{
+			{
+				{1, 2},
+				{3, 4},
+				{5, 6},
+			},
+			{
+				{7, 8},
+				{9, 10},
+				{11, 12},
+			},
+		},
+	}
+	sm.Learn(&som.DataSet{Vectors: []som.DataVector{{}}}, 0)
+
+	checkSlicesEqual(t, sm.Neurons[0][0].Weights, []float64{1, 2})
+	checkSlicesEqual(t, sm.Neurons[0][1].Weights, []float64{3, 4})
+	checkSlicesEqual(t, sm.Neurons[0][2].Weights, []float64{5, 6})
+	checkSlicesEqual(t, sm.Neurons[1][0].Weights, []float64{7, 8})
+	checkSlicesEqual(t, sm.Neurons[1][1].Weights, []float64{9, 10})
+	checkSlicesEqual(t, sm.Neurons[1][2].Weights, []float64{11, 12})
+}
+
+func TestComputeDistanceMatrixWorksCorrectlyWhenWeightsAreProvided(t *testing.T) {
+	sm := som.New(2, 2)
+	sm.Initializer = &som.ProvidedWeightsInitializer{
+		Weights: [][][]float64{
+			{
+				{1, 2},
+				{3, 4},
+			},
+			{
+				{5, 6},
+				{7, 8},
+			},
+		},
+	}
+	sm.Learn(&som.DataSet{Vectors: []som.DataVector{{}}}, 0)
+
+	mx := sm.ComputeDistanceMatrix(som.DataVector{5, 6})
+
+	if mx[1][0] != 0 {
+		t.Fatalf("Expected 0 distance to element %d %d, got %f", 1, 0, mx[1][0])
+	}
+	if mx[0][0] == 0 || mx[0][1] == 0 || mx[1][1] == 0 {
+		// depends on default distance function though
+		t.Fatalf("Rest of elements must have non null distance")
+	}
+}
+
 func BenchmarkDistanceCalculationUsingMathPow(b *testing.B) {
 	// simulating the case with neuron in the influence functions
 	neuron := &som.Neuron{X: 10, Y: 10}
@@ -282,5 +357,16 @@ func BenchmarkDistanceCalculationUsingMultiplication(b *testing.B) {
 		xx := float64(neuron.X - x)
 		yy := float64(neuron.Y - y)
 		_ = math.Sqrt(xx*xx + yy*yy)
+	}
+}
+
+func checkSlicesEqual(t *testing.T, a, b []float64) {
+	if len(a) != len(b) {
+		t.Fatalf("Slices have different length %d != %d", len(a), len(b))
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			t.Fatalf("Slices are not equal %v != %v", a, b)
+		}
 	}
 }

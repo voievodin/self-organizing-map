@@ -178,14 +178,15 @@ func (som *SOM) ComputeDistanceMatrix(vector DataVector) [][]float64 {
 // index position, for example:
 //
 // for the following matrix of neurons weights:
-//    [ [1, 2] [3, 4] ]
-//    [ [5, 6] [7, 8] ]
+//
+//	[ [1, 2] [3, 4] ]
+//	[ [5, 6] [7, 8] ]
 //
 // result will be:
-//  result[0]:   result[1]:
-//     [ 1 3 ]         [ 2 4 ]
-//     [ 5 7 ]         [ 6 8 ]
 //
+//	result[0]:   result[1]:
+//	   [ 1 3 ]         [ 2 4 ]
+//	   [ 5 7 ]         [ 6 8 ]
 func (som *SOM) SeparateWeights() [][][]float64 {
 	separations := make([][][]float64, len(som.Neurons[0][0].Weights))
 	for si := 0; si < len(separations); si++ {
@@ -401,6 +402,21 @@ func (initializer *RandDataSetVectorsWeightsInitializer) Init(dataSet *DataSet, 
 			for k := 0; k < len(neuron.Weights); k++ {
 				neuron.Weights[k] = vector[k]
 			}
+		}
+	}
+}
+
+// ProvidedWeightsInitializer sets neuron weights to predefined values.
+// Allows to reuse same SOM weights under different circumstances.
+type ProvidedWeightsInitializer struct {
+	Weights [][][]float64
+}
+
+func (initializer *ProvidedWeightsInitializer) Init(set *DataSet, neurons [][]*Neuron) {
+	for i := 0; i < len(neurons); i++ {
+		for j := 0; j < len(neurons[i]); j++ {
+			neurons[i][j].Weights = make([]float64, len(initializer.Weights[i][j]))
+			copy(neurons[i][j].Weights, initializer.Weights[i][j])
 		}
 	}
 }
