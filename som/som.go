@@ -528,15 +528,21 @@ func NewScalingDataAdapter(min, max []float64) *ScalingDataAdapter {
 }
 
 // ScalingDataAdapter scales input vector values to be in range [0, 1].
-// Note that the original vector is modified.
 type ScalingDataAdapter struct {
 	Min, MaxMinDiff []float64
 }
 
 func (adapter *ScalingDataAdapter) Adapt(vector []float64) []float64 {
-	for i := range vector {
-		vector[i] -= adapter.Min[i]
-		vector[i] /= adapter.MaxMinDiff[i]
+	if len(vector) != len(adapter.Min) {
+		panic("input vector length does not match adapter configuration")
 	}
-	return vector
+	adapted := make([]float64, len(vector))
+	for i := range vector {
+		if adapter.MaxMinDiff[i] == 0 {
+			adapted[i] = 0
+		} else {
+			adapted[i] = (vector[i] - adapter.Min[i]) / adapter.MaxMinDiff[i]
+		}
+	}
+	return adapted
 }

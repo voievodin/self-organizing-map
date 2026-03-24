@@ -229,6 +229,30 @@ func TestScalingDataAdapterAdaptsValues(t *testing.T) {
 			vector:   []float64{10, 10, 10},
 			expected: []float64{1, 0.5, 0.25},
 		},
+		{
+			min:      []float64{10},
+			max:      []float64{10},
+			vector:   []float64{12},
+			expected: []float64{0},
+		},
+		{ // Outside range (above)
+			min:      []float64{0},
+			max:      []float64{10},
+			vector:   []float64{15},
+			expected: []float64{1.5},
+		},
+		{ // Outside range (below)
+			min:      []float64{0},
+			max:      []float64{10},
+			vector:   []float64{-5},
+			expected: []float64{-0.5},
+		},
+		{ // Negative ranges
+			min:      []float64{-20},
+			max:      []float64{-10},
+			vector:   []float64{-15},
+			expected: []float64{0.5},
+		},
 	}
 
 	for _, aCase := range cases {
@@ -236,8 +260,20 @@ func TestScalingDataAdapterAdaptsValues(t *testing.T) {
 
 		adapted := adapter.Adapt(aCase.vector)
 		if !reflect.DeepEqual(adapted, aCase.expected) {
-			t.Fatalf("Expected %v != actual %v", adapter, aCase.expected)
+			t.Fatalf("Expected %v != actual %v for vector %v (min: %v, max: %v)", aCase.expected, adapted, aCase.vector, aCase.min, aCase.max)
 		}
+	}
+}
+
+func TestScalingDataAdapterDoesNotModifyOriginalVector(t *testing.T) {
+	min := []float64{0}
+	max := []float64{10}
+	vector := []float64{5}
+	adapter := som.NewScalingDataAdapter(min, max)
+
+	adapter.Adapt(vector)
+	if vector[0] != 5.0 {
+		t.Fatalf("ScalingDataAdapter.Adapt modified the input vector: expected 5.0, got %f", vector[0])
 	}
 }
 
