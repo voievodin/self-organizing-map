@@ -406,3 +406,74 @@ func checkSlicesEqual(t *testing.T, a, b []float64) {
 		}
 	}
 }
+
+func TestFindsBMUCorrectly(t *testing.T) {
+	sm := som.New(2, 2)
+	sm.Initializer = &som.ProvidedWeightsInitializer{
+		Weights: [][][]float64{
+			{
+				{1, 1}, // (0,0)
+				{2, 2}, // (0,1)
+			},
+			{
+				{3, 3}, // (1,0)
+				{4, 4}, // (1,1)
+			},
+		},
+	}
+	sm.Learn(&som.DataSet{Vectors: []som.DataVector{{}}}, 0)
+
+	cases := []struct {
+		vector               som.DataVector
+		expectedX, expectedY int
+	}{
+		{som.DataVector{1.1, 0.9}, 0, 0},
+		{som.DataVector{2.1, 1.9}, 0, 1},
+		{som.DataVector{3.1, 2.9}, 1, 0},
+		{som.DataVector{4.1, 3.9}, 1, 1},
+	}
+
+	for _, c := range cases {
+		bmu := sm.Test(c.vector)
+		if bmu.X != c.expectedX || bmu.Y != c.expectedY {
+			t.Fatalf("For vector %v, expected BMU at (%d,%d), but got (%d,%d)", c.vector, c.expectedX, c.expectedY, bmu.X, bmu.Y)
+		}
+	}
+}
+
+func TestRandomBMUIsSelectedInTheContextOfPrecisionGiven(t *testing.T) {
+	sm := som.New(3, 1)
+	sm.Precision = 1e-6
+	sm.Initializer = &som.ProvidedWeightsInitializer{
+		Weights: [][][]float64{
+			{{1.0}},       // Distance: 0.0 (Absolute min)
+			{{1.0000001}}, // Distance: 0.0000001 (Within precision)
+			{{2.0}},       // Distance: 1.0 (Outside precision)
+		},
+	}
+	sm.Learn(&som.DataSet{Vectors: []som.DataVector{{0}}}, 0)
+
+	vector := som.DataVector{1.0}
+
+	found0 := false
+	found1 := false
+	for i := 0; i < 1000; i++ {
+		bmu := sm.Test(vector)
+		if bmu.X == 2 {
+			t.Fatalf("Neuron at X=2 should never be selected as BMU (outside precision)")
+		}
+		if bmu.X == 0 {
+			found0 = true
+		}
+		if bmu.X == 1 {
+			found1 = true
+		}
+		if found0 && found1 {
+			break
+		}
+	}
+
+	if !found0 || !found1 {
+		t.Fatalf("Expected neurons at X=0 and X=1 to be picked as BMU at least once with precision 1e-6. Found0: %v, Found1: %v", found0, found1)
+	}
+}

@@ -118,6 +118,7 @@ type SOM struct {
 	Distance      DistanceFunc
 	Monitor       ProgressMonitor
 	InDataAdapter DataAdapter
+	Precision     float64
 }
 
 // Learn does learning of this SOM from the given data set,
@@ -210,33 +211,26 @@ func (som *SOM) computeDistance(vector DataVector) {
 }
 
 func (som *SOM) findBMU() *Neuron {
-	bmu := som.Neurons[0][0]
-	minDistance := bmu.Distance
-	candidatesCount := 1
+	minDistance := som.Neurons[0][0].Distance
 	for i := 0; i < len(som.Neurons); i++ {
 		for j := 0; j < len(som.Neurons[i]); j++ {
-			candidate := som.Neurons[i][j]
-			if minDistance > candidate.Distance {
-				bmu = candidate
-				minDistance = bmu.Distance
-				candidatesCount = 1
-			} else if minDistance == candidate.Distance {
-				candidatesCount++
+			if som.Neurons[i][j].Distance < minDistance {
+				minDistance = som.Neurons[i][j].Distance
 			}
 		}
 	}
 
-	if candidatesCount == 1 {
-		return bmu
-	}
-
-	candidates := make([]*Neuron, 0, 2)
+	var candidates []*Neuron
 	for i := 0; i < len(som.Neurons); i++ {
 		for j := 0; j < len(som.Neurons[i]); j++ {
-			if minDistance == som.Neurons[i][j].Distance {
+			if som.Neurons[i][j].Distance <= minDistance+som.Precision {
 				candidates = append(candidates, som.Neurons[i][j])
 			}
 		}
+	}
+
+	if len(candidates) == 1 {
+		return candidates[0]
 	}
 
 	return candidates[rand.Intn(len(candidates))]
