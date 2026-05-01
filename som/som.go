@@ -521,6 +521,13 @@ func NewScalingDataAdapter(min, max []float64) *ScalingDataAdapter {
 	return &ScalingDataAdapter{Min: min, MaxMinDiff: maxMinDiff}
 }
 
+func NewWeightedDataAdapter(delegate DataAdapter, multipliers []float64) *WeightedDataAdapter {
+	if delegate == nil {
+		delegate = &NoOpAdapter{}
+	}
+	return &WeightedDataAdapter{Delegate: delegate, Multipliers: multipliers}
+}
+
 // ScalingDataAdapter scales input vector values to be in range [0, 1].
 type ScalingDataAdapter struct {
 	Min, MaxMinDiff []float64
@@ -539,4 +546,24 @@ func (adapter *ScalingDataAdapter) Adapt(vector []float64) []float64 {
 		}
 	}
 	return adapted
+}
+
+// WeightedDataAdapter delegates vector adaptation and then applies
+// element-wise multipliers to the adapted values.
+type WeightedDataAdapter struct {
+	Delegate    DataAdapter
+	Multipliers []float64
+}
+
+func (adapter *WeightedDataAdapter) Adapt(vector []float64) []float64 {
+	adapted := adapter.Delegate.Adapt(vector)
+	if len(adapted) != len(adapter.Multipliers) {
+		panic("input vector length does not match adapter configuration")
+	}
+
+	weighted := make([]float64, len(adapted))
+	for i := range adapted {
+		weighted[i] = adapted[i] * adapter.Multipliers[i]
+	}
+	return weighted
 }

@@ -277,6 +277,49 @@ func TestScalingDataAdapterDoesNotModifyOriginalVector(t *testing.T) {
 	}
 }
 
+func TestWeightedDataAdapterAdaptsValues(t *testing.T) {
+	adapter := som.NewWeightedDataAdapter(&som.NoOpAdapter{}, []float64{1, 1, 2})
+
+	adapted := adapter.Adapt([]float64{10, 20, 30})
+	expected := []float64{10, 20, 60}
+	if !reflect.DeepEqual(adapted, expected) {
+		t.Fatalf("Expected %v != actual %v", expected, adapted)
+	}
+}
+
+func TestWeightedDataAdapterDelegatesToAnotherAdapter(t *testing.T) {
+	delegate := som.NewScalingDataAdapter([]float64{0, 0, 0}, []float64{10, 20, 40})
+	adapter := som.NewWeightedDataAdapter(delegate, []float64{1, 1, 2})
+
+	adapted := adapter.Adapt([]float64{10, 10, 10})
+	expected := []float64{1, 0.5, 0.5}
+	if !reflect.DeepEqual(adapted, expected) {
+		t.Fatalf("Expected %v != actual %v", expected, adapted)
+	}
+}
+
+func TestWeightedDataAdapterDoesNotModifyOriginalVector(t *testing.T) {
+	vector := []float64{10, 20, 30}
+	adapter := som.NewWeightedDataAdapter(&som.NoOpAdapter{}, []float64{1, 1, 2})
+
+	adapter.Adapt(vector)
+	if !reflect.DeepEqual(vector, []float64{10, 20, 30}) {
+		t.Fatalf("WeightedDataAdapter.Adapt modified the input vector: actual %v", vector)
+	}
+}
+
+func TestWeightedDataAdapterDoesNotModifyDelegatedVector(t *testing.T) {
+	delegated := []float64{1, 2, 3}
+	adapter := som.NewWeightedDataAdapter(som.DataAdapterFunc(func(vector []float64) []float64 {
+		return delegated
+	}), []float64{1, 1, 2})
+
+	adapter.Adapt([]float64{10, 20, 30})
+	if !reflect.DeepEqual(delegated, []float64{1, 2, 3}) {
+		t.Fatalf("WeightedDataAdapter.Adapt modified the delegated vector: actual %v", delegated)
+	}
+}
+
 func TestNeuronsAreOnTheRightPositions(t *testing.T) {
 	N, M := 15, 7
 	sm := som.New(N, M)
